@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIAP - Sistem Informasi Asisten Penghulu</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome untuk Ikon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- SweetAlert2 untuk Notifikasi -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .bg-kemenag { background-color: #006442; }
+        .text-kemenag { color: #006442; }
+        .border-kemenag { border-color: #006442; }
+        .hover-bg-kemenag:hover { background-color: #004d33; }
+        
+        .module-content { display: none; opacity: 0; transition: opacity 0.3s ease-in-out; }
+        .module-content.active { display: block; opacity: 1; animation: fadeIn 0.4s ease-in-out; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .sidebar-menu.active {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-left: 4px solid #fff;
+            font-weight: 600;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #006442; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #004d33; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <!-- SIDEBAR (DESKTOP) & OFFCANVAS (MOBILE) -->
+    <aside id="sidebar" class="bg-kemenag text-white w-64 flex-shrink-0 hidden md:flex flex-col transition-all duration-300 z-20">
+        <div class="p-6 text-center border-b border-green-800">
+            <i class="fa-solid fa-mosque text-4xl mb-3"></i>
+            <h1 class="text-xl font-bold tracking-wider">SIAP</h1>
+            <p class="text-xs text-green-200 mt-1">Sistem Informasi Asisten Penghulu</p>
+        </div>
+        
+        <nav class="flex-1 overflow-y-auto py-4">
+            <ul class="space-y-1">
+                <li><button onclick="showModule('modulInfoSyarat', this)" class="sidebar-menu active w-full text-left px-6 py-3 hover:bg-white hover:bg-opacity-10 transition-colors flex items-center gap-3"><i class="fa-solid fa-file-contract w-5"></i> Syarat Nikah</button></li>
+                <li><button onclick="showModule('modulCekWali', this)" class="sidebar-menu w-full text-left px-6 py-3 hover:bg-white hover:bg-opacity-10 transition-colors flex items-center gap-3"><i class="fa-solid fa-users w-5"></i> Cek Wali Nasab</button></li>
+                <li><button onclick="showModule('modulHitungUmur', this)" class="sidebar-menu w-full text-left px-6 py-3 hover:bg-white hover:bg-opacity-10 transition-colors flex items-center gap-3"><i class="fa-solid fa-calendar-day w-5"></i> Kalkulator Umur</button></li>
+                <li><button onclick="showModule('modulHitungIddah', this)" class="sidebar-menu w-full text-left px-6 py-3 hover:bg-white hover:bg-opacity-10 transition-colors flex items-center gap-3"><i class="fa-solid fa-hourglass-half w-5"></i> Kalkulator Iddah</button></li>
+                <li><button onclick="showModule('modulHitungMahar', this)" class="sidebar-menu w-full text-left px-6 py-3 hover:bg-white hover:bg-opacity-10 transition-colors flex items-center gap-3"><i class="fa-solid fa-ring w-5"></i> Kalkulator Mahar</button></li>
+                <li><button onclick="showModule('modulHitungZakat', this)" class="sidebar-menu w-full text-left px-6 py-3 hover:bg-white hover:bg-opacity-10 transition-colors flex items-center gap-3"><i class="fa-solid fa-hand-holding-dollar w-5"></i> Kalkulator Zakat</button></li>
+                <li><button onclick="showModule('modulBukuSaku', this)" class="sidebar-menu w-full text-left px-6 py-3 hover:bg-white hover:bg-opacity-10 transition-colors flex items-center gap-3"><i class="fa-solid fa-book-open w-5"></i> Buku Saku</button></li>
+            </ul>
+        </nav>
+        
+        <!-- FOOTER SIDEBAR BARU -->
+        <div class="p-4 border-t border-green-800 text-xs text-center text-green-200">
+            <p class="mb-1">Developed by:</p>
+            <p class="font-semibold text-white text-sm">Khoirul Burhan</p>
+            <p>Penghulu KUA Candisari</p>
+            <p>Kota Semarang &copy; 2026</p>
+        </div>
+    </aside>
+
+    <!-- KONTEN UTAMA -->
+    <div class="flex-1 flex flex-col h-screen overflow-hidden">
+        
+        <!-- HEADER MOBILE & TOPBAR -->
+        <header class="bg-white shadow-sm z-10 flex items-center justify-between p-4 md:px-8">
+            <div class="flex items-center gap-3">
+                <button id="mobileMenuBtn" class="md:hidden text-gray-600 focus:outline-none">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+                <h2 id="pageTitle" class="text-xl font-bold text-gray-800">Syarat Nikah</h2>
+            </div>
+            <div class="text-sm text-gray-500 hidden sm:block">
+                <i class="fa-regular fa-clock mr-1"></i> <span id="realtimeClock"></span>
+            </div>
+        </header>
+
+        <!-- AREA MODUL -->
+        <main class="flex-1 overflow-y-auto p-4 md:p-8 bg-gray-50">
+            <div class="max-w-4xl mx-auto">
+
+                <!-- MODUL 1: INFO SYARAT -->
+                <div id="modulInfoSyarat" class="module-content active">
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <div class="flex justify-between items-center mb-6">
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800">Standar Pelayanan KUA</h3>
+                                <p class="text-gray-500 text-sm">Persyaratan administrasi pendaftaran nikah.</p>
+                            </div>
+                        </div>
+
+                        <!-- Accordion Persyaratan -->
+                        <div class="space-y-3">
+                            <div class="border rounded-lg overflow-hidden">
+                                <button class="accordion-toggle w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 font-semibold text-gray-700">
+                                    <span class="flex items-center gap-2"><i class="fa-solid fa-file-signature text-kemenag"></i> 1. Dokumen Persyaratan Wajib</span>
+                                    <i class="fa-solid fa-chevron-down transition-transform"></i>
+                                </button>
+                                <div class="accordion-content hidden p-4 bg-white text-sm text-gray-600 leading-relaxed border-t">
+                                    <ul class="list-disc pl-5 space-y-2">
+                                        <li>Surat Pengantar dari Desa/Kelurahan tempat tinggal calon mempelai (Model N1).</li>
+                                        <li>Surat Permohonan Kehendak Nikah (Model N2).</li>
+                                        <li>Persetujuan Calon Mempelai (Model N3).</li>
+                                        <li>Fotokopi Akta Lahir, KTP, dan Kartu Keluarga (KK).</li>
+                                        <li>Rekomendasi Nikah dari KUA asal (jika nikah di luar domisili).</li>
+                                        <li>Izin tertulis Orang Tua (Model N5) bagi yang berusia di bawah 21 tahun.</li>
+                                        <li>Akta Cerai/Kematian bagi Janda/Duda.</li>
+                                        <li>Dispensasi PA bagi yang berusia di bawah 19 tahun.</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="border rounded-lg overflow-hidden">
+                                <button class="accordion-toggle w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 font-semibold text-gray-700">
+                                    <span class="flex items-center gap-2"><i class="fa-solid fa-money-bill-wave text-kemenag"></i> 2. Biaya & PNBP</span>
+                                    <i class="fa-solid fa-chevron-down transition-transform"></i>
+                                </button>
+                                <div class="accordion-content hidden p-4 bg-white text-sm text-gray-600 border-t">
+                                    <p><strong>Nikah di KUA (Jam Kerja):</strong> Rp 0,- (Gratis)</p>
+                                    <p class="mt-2"><strong>Nikah di Luar KUA/Luar Jam Kerja:</strong> Rp 600.000,- (Disetor ke Bank Persepsi/Kantor Pos melalui billing yang diterbitkan KUA).</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODUL 2: CEK WALI -->
+                <div id="modulCekWali" class="module-content">
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4"><i class="fa-solid fa-sitemap text-kemenag mr-2"></i>Pemeriksaan Status Wali</h3>
+                        
+                        <div id="nasabCheckSection" class="bg-gray-50 p-5 rounded-lg border">
+                            <h4 class="font-semibold text-gray-700 mb-3">Langkah 1: Verifikasi Nasab</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-600 mb-1">Tgl Lahir Catin Wanita</label>
+                                    <input type="date" id="tglLahirCatin" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-kemenag outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-600 mb-1">Tgl Nikah Orang Tua</label>
+                                    <input type="date" id="tglNikahOrtu" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-kemenag outline-none">
+                                </div>
+                            </div>
+                            <button id="cekNasabBtn" class="bg-kemenag hover-bg-kemenag text-white px-5 py-2 rounded-md font-medium transition-colors w-full md:w-auto">Cek Nasab</button>
+                        </div>
+
+                        <div id="waliCheckSection" class="hidden mt-6 bg-gray-50 p-5 rounded-lg border">
+                            <h4 class="font-semibold text-gray-700 mb-3">Langkah 2: Urutan Wali Nasab</h4>
+                            <div id="waliQuestionContainer" class="space-y-4"></div>
+                        </div>
+
+                        <div id="finalResultWali" class="hidden mt-6">
+                            <div class="p-5 rounded-lg shadow-inner bg-green-50 border border-green-200" id="resultWaliBox">
+                                <h3 id="resultWaliTitle" class="text-2xl font-bold text-green-800"></h3>
+                                <p id="resultWaliDesc" class="mt-2 text-gray-700"></p>
+                                <div class="mt-4 pt-3 border-t border-green-300 flex justify-between items-center">
+                                    <p class="text-sm font-semibold text-gray-800" id="resultWaliSyarat"></p>
+                                    <button id="printWaliBtn" class="bg-white border border-gray-300 shadow-sm px-4 py-2 rounded text-sm hover:bg-gray-50"><i class="fa-solid fa-print mr-1"></i> Cetak Resume</button>
+                                </div>
+                            </div>
+                            <button onclick="resetWali()" class="mt-4 text-sm text-gray-500 hover:text-gray-800 underline"><i class="fa-solid fa-rotate-right"></i> Ulangi Pemeriksaan</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODUL 3: HITUNG UMUR -->
+                <div id="modulHitungUmur" class="module-content">
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <h3 class="text-xl font-bold text-gray-800 mb-1"><i class="fa-solid fa-calendar-day text-kemenag mr-2"></i>Kalkulator Umur & Syarat Administratif</h3>
+                        <p class="text-sm text-gray-500 mb-5">Berdasarkan UU No. 16 Tahun 2019 tentang Perkawinan.</p>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-5 rounded-lg border mb-6">
+                            <div class="md:col-span-3">
+                                <label class="block text-sm font-medium text-gray-600 mb-1">Rencana Tanggal Akad</label>
+                                <input type="date" id="umurTglAkad" class="w-full md:w-1/3 p-2 border rounded-md focus:ring-2 focus:ring-kemenag outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600 mb-1">Tgl Lahir Catin Pria</label>
+                                <input type="date" id="umurTglLahirPria" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-kemenag outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600 mb-1">Tgl Lahir Catin Wanita</label>
+                                <input type="date" id="umurTglLahirWanita" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-kemenag outline-none">
+                            </div>
+                            <div class="flex items-end">
+                                <button id="cekUmurBtn" class="bg-kemenag hover-bg-kemenag text-white px-5 py-2 rounded-md font-medium transition-colors w-full h-[42px]">Hitung Umur</button>
+                            </div>
+                        </div>
+
+                        <div id="umurResultContainer" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Hasil di-inject via JS -->
+                        </div>
+                        
+                        <div id="printUmurContainer" class="hidden mt-4 text-right">
+                             <button id="printUmurBtn" class="bg-gray-800 text-white px-4 py-2 rounded text-sm hover:bg-gray-700"><i class="fa-solid fa-print mr-1"></i> Cetak Laporan Umur</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODUL 4: HITUNG IDDAH -->
+                <div id="modulHitungIddah" class="module-content">
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <h3 class="text-xl font-bold text-gray-800 mb-5"><i class="fa-solid fa-hourglass-half text-kemenag mr-2"></i>Kalkulator Masa Iddah</h3>
+                        
+                        <div class="space-y-4 max-w-lg">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Penyebab Perceraian</label>
+                                <select id="iddahStatus" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-kemenag outline-none">
+                                    <option value="">-- Pilih --</option>
+                                    <option value="cerai_mati">Cerai Mati (Wafat)</option>
+                                    <option value="cerai_hidup">Cerai Hidup (Talak/Gugat)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Mulai (Wafat / Inkracht)</label>
+                                <input type="date" id="iddahTglAwal" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-kemenag outline-none">
+                            </div>
+                            
+                            <div id="iddahOpsi" class="hidden space-y-3 p-4 bg-gray-50 border rounded-md">
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" id="iddahHamil" class="rounded text-kemenag focus:ring-kemenag">
+                                    <span class="text-sm">Dalam keadaan Hamil</span>
+                                </label>
+                                <div id="iddahOpsiHidup" class="hidden">
+                                     <select id="iddahHaid" class="w-full mt-2 p-2 border rounded-md text-sm outline-none">
+                                        <option value="haid">Masih mengalami Haid</option>
+                                        <option value="menopause">Telah Menopause / Tidak Haid</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <button id="hitungIddahBtn" class="w-full bg-kemenag hover-bg-kemenag text-white py-2 rounded-md font-medium">Hitung Jatuh Tempo Iddah</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODUL 5: HITUNG MAHAR -->
+                <div id="modulHitungMahar" class="module-content">
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <h3 class="text-xl font-bold text-gray-800 mb-5"><i class="fa-solid fa-ring text-kemenag mr-2"></i>Konversi & Terbilang Mahar</h3>
+                        
+                        <div class="p-5 border rounded-lg bg-gray-50">
+                            <label class="block text-sm font-medium text-gray-600 mb-2">Jumlah Uang (Otomatis diformat)</label>
+                            <input type="text" id="maharInput" placeholder="Contoh: 1.500.000" class="w-full text-xl font-bold p-3 border rounded-md focus:ring-2 focus:ring-kemenag outline-none text-gray-800">
+                            
+                            <div class="mt-4 p-4 bg-white border rounded-md shadow-sm hidden" id="maharResultBox">
+                                <p class="text-sm text-gray-500">Terbilang (Bahasa Indonesia):</p>
+                                <p class="text-lg font-semibold text-kemenag mb-3 italic" id="maharTerbilangId"></p>
+                                <p class="text-sm text-gray-500">Terbilang (Bahasa Inggris):</p>
+                                <p class="text-lg font-semibold text-blue-700 italic" id="maharTerbilangEn"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODUL 6: KALKULATOR ZAKAT -->
+                <div id="modulHitungZakat" class="module-content">
+                     <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 text-center py-12">
+                         <i class="fa-solid fa-hand-holding-dollar text-4xl text-gray-300 mb-3"></i>
+                         <h3 class="text-lg font-medium text-gray-600">Modul Kalkulator Zakat</h3>
+                         <p class="text-sm text-gray-400">Dalam pengembangan.</p>
+                     </div>
+                </div>
+
+                <!-- MODUL 7: BUKU SAKU -->
+                <div id="modulBukuSaku" class="module-content">
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <h3 class="text-xl font-bold text-gray-800 mb-5"><i class="fa-solid fa-book-quran text-kemenag mr-2"></i>Buku Saku Penghulu</h3>
+                        
+                        <div class="space-y-3">
+                            <!-- Naskah Khutbah -->
+                            <div class="border rounded-lg overflow-hidden">
+                                <button class="accordion-toggle w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 font-semibold text-gray-700">
+                                    <span>Teks Khutbah Nikah & Doa</span>
+                                    <i class="fa-solid fa-chevron-down transition-transform"></i>
+                                </button>
+                                <div class="accordion-content hidden p-5 bg-white border-t relative">
+                                    <button class="absolute top-4 right-4 text-gray-400 hover:text-kemenag" onclick="copyToClipboard('teksKhutbah')"><i class="fa-regular fa-copy text-lg"></i></button>
+                                    <div id="teksKhutbah">
+                                        <p class="text-right text-xl leading-loose font-arabic mb-4" dir="rtl">
+                                            اَلْحَمْدُ ِللهِ الَّذِي خَلَقَ مِنَ الْمَاءِ بَشَرًا فَجَعَلَهُ نَسَبًا وَصِهْرًا...
+                                        </p>
+                                        <p class="text-right text-xl leading-loose font-arabic" dir="rtl">
+                                            بَارَكَ اللهُ لَكَ وَبَارَكَ عَلَيْكَ وَجَمَعَ بَيْنَكُمَا فِي خَيْرٍ
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Ijab Qabul Berbagai Bahasa -->
+                            <div class="border rounded-lg overflow-hidden">
+                                <button class="accordion-toggle w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 font-semibold text-gray-700">
+                                    <span>Lafadz Ijab Qabul (Multi Bahasa)</span>
+                                    <i class="fa-solid fa-chevron-down transition-transform"></i>
+                                </button>
+                                <div class="accordion-content hidden p-5 bg-white border-t relative">
+                                    <div class="space-y-4">
+                                        <div>
+                                            <div class="flex justify-between items-center mb-1">
+                                                <h4 class="font-bold text-kemenag">Bahasa Arab</h4>
+                                                <button class="text-gray-400 hover:text-kemenag text-sm" onclick="copyToClipboard('ijabArab')"><i class="fa-regular fa-copy"></i> Salin</button>
+                                            </div>
+                                            <div id="ijabArab" class="p-3 bg-gray-50 rounded italic text-sm">
+                                                <p><b>Ijab:</b> Ankahtuka wa zawwajtuka ibnatii [Nama] bil mahril madzkur haalan.</p>
+                                                <p class="mt-1"><b>Qabul:</b> Qobiltu nikahaha wa tazwijaha bil mahril madzkur haalan.</p>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div class="flex justify-between items-center mb-1">
+                                                <h4 class="font-bold text-kemenag">Bahasa Inggris</h4>
+                                                <button class="text-gray-400 hover:text-kemenag text-sm" onclick="copyToClipboard('ijabEng')"><i class="fa-regular fa-copy"></i> Salin</button>
+                                            </div>
+                                            <div id="ijabEng" class="p-3 bg-gray-50 rounded italic text-sm">
+                                                <p><b>Ijab:</b> I marry you and wed you to my daughter, [Name], with the mentioned mahr, paid in cash.</p>
+                                                <p class="mt-1"><b>Qabul:</b> I accept her marriage and wedding to me, with the mentioned mahr, paid in cash.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- FOOTER MOBILE -->
+            <div class="mt-8 mb-4 text-center text-xs text-gray-400 md:hidden">
+                <p>Developed by <strong>Khoirul Burhan</strong></p>
+                <p>Penghulu KUA Candisari Kota Semarang</p>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MOBILE OVERLAY -->
+    <div id="mobileOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-10 hidden md:hidden"></div>
+
+    <script>
+        // --- UI & NAVIGASI ---
+        const sidebar = document.getElementById('sidebar');
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileOverlay = document.getElementById('mobileOverlay');
+        const pageTitle = document.getElementById('pageTitle');
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('hidden');
+            sidebar.classList.toggle('absolute');
+            sidebar.classList.toggle('h-full');
+            mobileOverlay.classList.toggle('hidden');
+        }
+
+        mobileMenuBtn.addEventListener('click', toggleSidebar);
+        mobileOverlay.addEventListener('click', toggleSidebar);
+
+        function showModule(moduleId, btnElement) {
+            document.querySelectorAll('.module-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.sidebar-menu').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(moduleId).classList.add('active');
+            btnElement.classList.add('active');
+            pageTitle.innerText = btnElement.innerText;
+            
+            if(window.innerWidth < 768) toggleSidebar();
+        }
+
+        // Accordion Logic
+        document.querySelectorAll('.accordion-toggle').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const content = btn.nextElementSibling;
+                const icon = btn.querySelector('i.fa-chevron-down');
+                content.classList.toggle('hidden');
+                icon.style.transform = content.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+            });
+        });
+
+        // Realtime Clock
+        setInterval(() => {
+            document.getElementById('realtimeClock').innerText = new Date().toLocaleString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+        }, 1000);
+
+
+        // --- LOGIKA CEK WALI ---
+        document.getElementById('cekNasabBtn').addEventListener('click', () => {
+            const tglLahir = new Date(document.getElementById('tglLahirCatin').value);
+            const tglNikah = new Date(document.getElementById('tglNikahOrtu').value);
+            
+            if(isNaN(tglLahir) || isNaN(tglNikah)) return Swal.fire('Error', 'Lengkapi tanggal lahir dan nikah', 'error');
+
+            const diffTime = Math.abs(tglLahir - tglNikah);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if(tglLahir < tglNikah || diffDays < 180) {
+                tampilkanHasilWali('WALI HAKIM', 'Anak lahir kurang dari 6 bulan dari akad nikah orang tua.', 'Syarat: Surat Pernyataan Wali Hakim diketahui Kelurahan.', 'red');
+            } else {
+                Swal.fire({ title: 'Nasab Sah', text: 'Anak lahir lebih dari 6 bulan.', icon: 'success', timer: 1500 });
+                document.getElementById('waliCheckSection').classList.remove('hidden');
+                document.getElementById('waliQuestionContainer').innerHTML = `
+                    <label class="block text-sm font-medium mb-1">Status Ayah Kandung:</label>
+                    <select id="statusAyah" class="w-full p-2 border rounded" onchange="prosesWaliAyah(this.value)">
+                        <option value="">-- Pilih --</option>
+                        <option value="hadir">Hadir saat akad</option>
+                        <option value="taukil">Taukil (Mewakilkan)</option>
+                        <option value="wafat">Telah Wafat</option>
+                    </select>
+                `;
+            }
+        });
+
+        function prosesWaliAyah(val) {
+            if(val === 'hadir') tampilkanHasilWali('WALI NASAB (AYAH)', 'Ayah kandung bertindak sebagai wali langsung.', 'Pastikan kehadiran saat akad.', 'green');
+            else if(val === 'taukil') tampilkanHasilWali('WALI TAUKIL', 'Ayah mewakilkan perwaliannya.', 'Syarat: Surat Taukil Wali ditandatangani.', 'blue');
+            else if(val === 'wafat') tampilkanHasilWali('WALI NASAB BERIKUTNYA', 'Ayah telah wafat, hak perwalian pindah ke Kakek / Saudara Laki-laki.', 'Lanjutkan penelusuran nasab.', 'yellow');
+        }
+
+        function tampilkanHasilWali(title, desc, syarat, colorTheme) {
+            document.getElementById('finalResultWali').classList.remove('hidden');
+            document.getElementById('resultWaliTitle').innerText = title;
+            document.getElementById('resultWaliDesc').innerText = desc;
+            document.getElementById('resultWaliSyarat').innerText = syarat;
+            
+            // Konfigurasi Print
+            window.printData = { jenis: 'Wali', title, desc, syarat };
+        }
+
+        function resetWali() {
+            document.getElementById('finalResultWali').classList.add('hidden');
+            document.getElementById('waliCheckSection').classList.add('hidden');
+            document.getElementById('tglLahirCatin').value = '';
+            document.getElementById('tglNikahOrtu').value = '';
+        }
+
+
+        // --- LOGIKA HITUNG UMUR ---
+        document.getElementById('cekUmurBtn').addEventListener('click', () => {
+            const akad = new Date(document.getElementById('umurTglAkad').value);
+            const pria = new Date(document.getElementById('umurTglLahirPria').value);
+            const wanita = new Date(document.getElementById('umurTglLahirWanita').value);
+
+            if(isNaN(akad) || isNaN(pria) || isNaN(wanita)) return Swal.fire('Error', 'Isi semua tanggal!', 'error');
+
+            const umurPria = calculateAge(pria, akad);
+            const umurWanita = calculateAge(wanita, akad);
+
+            renderUmurResult(umurPria, 'Pria', document.getElementById('umurResultContainer'));
+            renderUmurResult(umurWanita, 'Wanita', document.getElementById('umurResultContainer'));
+            
+            document.getElementById('umurResultContainer').classList.remove('hidden');
+            document.getElementById('printUmurContainer').classList.remove('hidden');
+            
+            window.printDataUmur = { pria: umurPria, wanita: umurWanita, tglAkad: document.getElementById('umurTglAkad').value };
+        });
+
+        function calculateAge(birthDate, targetDate) {
+            let years = targetDate.getFullYear() - birthDate.getFullYear();
+            let months = targetDate.getMonth() - birthDate.getMonth();
+            if (months < 0 || (months === 0 && targetDate.getDate() < birthDate.getDate())) {
+                years--;
+                months += (months < 0) ? 12 : 11;
+            }
+            return { years, months };
+        }
+
+        function renderUmurResult(age, gender, container) {
+            let status = "", color = "";
+            if(age.years < 19) { status = "Wajib Dispensasi PA"; color = "bg-red-50 border-red-200 text-red-700"; }
+            else if(age.years < 21) { status = "Wajib Izin Ortu (N5)"; color = "bg-yellow-50 border-yellow-200 text-yellow-700"; }
+            else { status = "Cukup Umur"; color = "bg-green-50 border-green-200 text-green-700"; }
+
+            const html = `
+                <div class="p-4 border rounded-lg ${color}">
+                    <h4 class="font-bold border-b pb-2 mb-2">Catin ${gender}</h4>
+                    <p class="text-xl font-black mb-1">${age.years} Thn, ${age.months} Bln</p>
+                    <p class="text-sm font-medium"><i class="fa-solid fa-circle-info mr-1"></i> ${status}</p>
+                </div>
+            `;
+            if(gender === 'Pria') container.innerHTML = html;
+            else container.innerHTML += html;
+        }
+
+
+        // --- FITUNG MAHAR (FORMAT UANG & TERBILANG) ---
+        const inputMahar = document.getElementById('maharInput');
+        inputMahar.addEventListener('keyup', function(e) {
+            let val = this.value.replace(/[^,\d]/g, '');
+            if(!val) { document.getElementById('maharResultBox').classList.add('hidden'); return; }
+            
+            this.value = new Intl.NumberFormat('id-ID').format(val);
+            document.getElementById('maharResultBox').classList.remove('hidden');
+            
+            const num = parseInt(val, 10);
+            document.getElementById('maharTerbilangId').innerText = terbilangId(num) + " Rupiah";
+            document.getElementById('maharTerbilangEn').innerText = terbilangEn(num) + " Rupiah";
+        });
+
+        function terbilangId(n) {
+            const angka = ["", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam", "Tujuh", "Delapan", "Sembilan", "Sepuluh", "Sebelas"];
+            if (n < 12) return angka[n];
+            if (n < 20) return terbilangId(n - 10) + " Belas";
+            if (n < 100) return angka[Math.floor(n / 10)] + " Puluh " + terbilangId(n % 10);
+            if (n < 200) return "Seratus " + terbilangId(n - 100);
+            if (n < 1000) return angka[Math.floor(n / 100)] + " Ratus " + terbilangId(n % 100);
+            if (n < 2000) return "Seribu " + terbilangId(n - 1000);
+            if (n < 1000000) return terbilangId(Math.floor(n / 1000)) + " Ribu " + terbilangId(n % 1000);
+            if (n < 1000000000) return terbilangId(Math.floor(n / 1000000)) + " Juta " + terbilangId(n % 1000000);
+            return "Nominal terlalu besar"; 
+        }
+
+        function terbilangEn(n) {
+            const units = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
+            const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+            if (n < 20) return units[n];
+            if (n < 100) return tens[Math.floor(n / 10)] + " " + units[n % 10];
+            if (n < 1000) return units[Math.floor(n / 100)] + " Hundred " + terbilangEn(n % 100);
+            if (n < 1000000) return terbilangEn(Math.floor(n / 1000)) + " Thousand " + terbilangEn(n % 1000);
+            if (n < 1000000000) return terbilangEn(Math.floor(n / 1000000)) + " Million " + terbilangEn(n % 1000000);
+            return "";
+        }
+
+        // --- FITUR COPY BUKU SAKU ---
+        function copyToClipboard(elementId) {
+            const el = document.getElementById(elementId);
+            const text = el.innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Teks disalin!', showConfirmButton: false, timer: 1500 });
+            });
+        }
+
+
+        // --- FITUR CETAK LAPORAN (PRINT) DENGAN KOP KUA ---
+        function cetakLaporan(judul, konten) {
+            const tglSekarang = new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
+            
+            // Konteks Khusus: Nama Kepala KUA sesuai data revisi
+            const html = `
+                <html><head><title>Cetak ${judul}</title>
+                <style>
+                    body { font-family: 'Times New Roman', serif; padding: 40px; line-height: 1.5; color: #000; }
+                    .kop { text-align: center; border-bottom: 3px solid #000; padding-bottom: 15px; margin-bottom: 30px; }
+                    .kop h2, .kop h3 { margin: 0; font-weight: bold; }
+                    .kop p { margin: 2px 0; font-size: 12px; }
+                    .content { font-size: 14px; margin-bottom: 40px; }
+                    .ttd-box { float: right; width: 250px; text-align: center; }
+                    .ttd-box p { margin: 0; }
+                </style>
+                </head><body>
+                    <div class="kop">
+                        <h3>KEMENTERIAN AGAMA REPUBLIK INDONESIA</h3>
+                        <h2>KANTOR KEMENTERIAN AGAMA KOTA SEMARANG</h2>
+                        <h2>KANTOR URUSAN AGAMA</h2>
+                    </div>
+                    
+                    <h3 style="text-align:center; text-decoration:underline;">LAPORAN HASIL ${judul.toUpperCase()}</h3>
+                    
+                    <div class="content">
+                        ${konten}
+                    </div>
+
+                    <div class="ttd-box">
+                        <p>Semarang, ${tglSekarang}</p>
+                        <p>Kepala KUA,</p>
+                        <br><br><br><br>
+                        <p style="font-weight:bold; text-decoration:underline;">Muntholif, S.Ag</p>
+                    </div>
+                    <script>window.onload = function() { window.print(); window.close(); }<\/script>
+                </body></html>
+            `;
+            const printWin = window.open('', '_blank');
+            printWin.document.write(html);
+            printWin.document.close();
+        }
+
+        // Listener Cetak Wali
+        document.getElementById('printWaliBtn').addEventListener('click', () => {
+            const data = window.printData;
+            const content = `
+                <p>Berdasarkan pemeriksaan dokumen administrasi pendaftaran kehendak nikah, maka dengan ini ditetapkan bahwa status Wali Nikah adalah sebagai berikut:</p>
+                <table style="width:100%; margin-top:15px; margin-bottom:15px;" cellpadding="5">
+                    <tr><td width="30%"><strong>Status Wali</strong></td><td>: ${data.title}</td></tr>
+                    <tr><td><strong>Keterangan</strong></td><td>: ${data.desc}</td></tr>
+                    <tr><td><strong>Syarat Administrasi</strong></td><td>: ${data.syarat}</td></tr>
+                </table>
+                <p>Demikian hasil pemeriksaan ini dibuat untuk digunakan sebagai syarat kelengkapan administrasi pencatatan perkawinan.</p>
+            `;
+            cetakLaporan('Pemeriksaan Wali', content);
+        });
+
+        // Listener Cetak Umur
+        document.getElementById('printUmurBtn').addEventListener('click', () => {
+            const data = window.printDataUmur;
+            const content = `
+                <p>Berdasarkan pemeriksaan dokumen tanggal lahir calon pengantin yang diregistrasikan untuk rencana akad nikah tanggal <strong>${data.tglAkad}</strong>, diperoleh hasil sebagai berikut (UU No 16 Th 2019):</p>
+                <table style="width:100%; margin-top:15px;" cellpadding="5" border="1" cellspacing="0">
+                    <tr>
+                        <th width="30%">Catin</th>
+                        <th width="35%">Usia Saat Akad</th>
+                        <th width="35%">Keterangan Syarat</th>
+                    </tr>
+                    <tr>
+                        <td align="center"><strong>Calon Suami</strong></td>
+                        <td align="center">${data.pria.years} Tahun, ${data.pria.months} Bulan</td>
+                        <td align="center">${data.pria.years < 19 ? 'Wajib Dispensasi PA' : (data.pria.years < 21 ? 'Wajib Izin Ortu (N5)' : 'Cukup Umur')}</td>
+                    </tr>
+                    <tr>
+                        <td align="center"><strong>Calon Istri</strong></td>
+                        <td align="center">${data.wanita.years} Tahun, ${data.wanita.months} Bulan</td>
+                        <td align="center">${data.wanita.years < 19 ? 'Wajib Dispensasi PA' : (data.wanita.years < 21 ? 'Wajib Izin Ortu (N5)' : 'Cukup Umur')}</td>
+                    </tr>
+                </table>
+            `;
+            cetakLaporan('Pemeriksaan Umur Catin', content);
+        });
+
+    </script>
+</body>
+</html>
